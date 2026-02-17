@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Dispatchr</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #0f1117;
+        color: #e2e8f0;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .sidebar {
+        width: 300px;
+        min-width: 300px;
+        background: #1a1d27;
+        border-right: 1px solid #2d3148;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .sidebar-header {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid #2d3148;
+      }
+      .sidebar-header h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .sidebar-header h1 span {
+        color: #6c63ff;
+      }
+      .sidebar-header p {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 2px;
+      }
+      .section {
+        padding: 16px 20px;
+        border-bottom: 1px solid #2d3148;
+      }
+      .section h2 {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        margin-bottom: 12px;
+      }
+      .input-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      input {
+        flex: 1;
+        background: #0f1117;
+        border: 1px solid #2d3148;
+        border-radius: 6px;
+        color: #e2e8f0;
+        padding: 7px 10px;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s;
+        min-width: 0;
+      }
+      input:focus {
+        border-color: #6c63ff;
+      }
+      input::placeholder {
+        color: #3d4466;
+      }
+      button {
+        background: #6c63ff;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+      }
+      button:hover {
+        background: #7c74ff;
+      }
+      button:active {
+        transform: scale(0.98);
+      }
+      .btn-order {
+        background: #e05a5a;
+      }
+      .btn-order:hover {
+        background: #f06060;
+      }
+      .courier-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      .courier-item {
+        background: #0f1117;
+        border: 1px solid #2d3148;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .courier-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-free {
+        background: #22c55e;
+        box-shadow: 0 0 6px #22c55e88;
+      }
+      .dot-busy {
+        background: #f59e0b;
+        box-shadow: 0 0 6px #f59e0b88;
+      }
+      .courier-info {
+        flex: 1;
+      }
+      .courier-name {
+        font-weight: 600;
+        color: #e2e8f0;
+      }
+      .courier-coords {
+        font-size: 11px;
+        color: #64748b;
+      }
+      .badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 99px;
+        text-transform: uppercase;
+      }
+      .badge-free {
+        background: #14532d;
+        color: #22c55e;
+      }
+      .badge-busy {
+        background: #451a03;
+        color: #f59e0b;
+      }
+      .log {
+        padding: 12px 20px;
+        flex: 1;
+        overflow-y: auto;
+      }
+      .log h2 {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        margin-bottom: 10px;
+      }
+      .log-entry {
+        font-size: 12px;
+        color: #94a3b8;
+        padding: 6px 0;
+        border-bottom: 1px solid #1e2235;
+        line-height: 1.5;
+      }
+      .tag {
+        font-weight: 700;
+        color: #6c63ff;
+      }
+      .tag-ok {
+        color: #22c55e;
+      }
+      .tag-err {
+        color: #ff6b6b;
+      }
+      .map-area {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: #0f1117;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .map-legend {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        background: #1a1d27cc;
+        border: 1px solid #2d3148;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 12px;
+        backdrop-filter: blur(4px);
+      }
+      .map-legend h3 {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .map-title {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #3d4466;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h1>Dispatch<span>r</span></h1>
+        <p>City grid 0–100 × 0–100</p>
+      </div>
+
+      <div class="section">
+        <h2>Add Courier</h2>
+        <div class="input-row">
+          <input id="courierId" placeholder="ID" type="number" />
+          <input
+            id="courierX"
+            placeholder="X"
+            type="number"
+            min="0"
+            max="100"
+          />
+          <input
+            id="courierY"
+            placeholder="Y"
+            type="number"
+            min="0"
+            max="100"
+          />
+        </div>
+        <button onclick="addCourier()">+ Add Courier</button>
+      </div>
+
+      <div class="section">
+        <h2>Create Order</h2>
+        <div class="input-row">
+          <input id="orderId" placeholder="Order ID" type="number" />
+          <input id="restX" placeholder="X" type="number" min="0" max="100" />
+          <input id="restY" placeholder="Y" type="number" min="0" max="100" />
+        </div>
+        <button class="btn-order" onclick="createOrder()">
+          ⚡ Dispatch Order
+        </button>
+      </div>
+
+      <div class="section">
+        <h2>Couriers</h2>
+        <div class="courier-list" id="courierList">
+          <div style="font-size: 12px; color: #3d4466">No couriers yet.</div>
+        </div>
+      </div>
+
+      <div class="log">
+        <h2>Activity Log</h2>
+        <div id="logEntries"></div>
+      </div>
+    </div>
+
+    <div class="map-area">
+      <div class="map-title">City Grid — Manhattan Distance</div>
+      <canvas id="mapCanvas"></canvas>
+      <div class="map-legend">
+        <h3>Legend</h3>
+        <div class="legend-item">
+          <div
+            class="legend-dot"
+            style="background: #22c55e; box-shadow: 0 0 5px #22c55e88"
+          ></div>
+          Free Courier
+        </div>
+        <div class="legend-item">
+          <div
+            class="legend-dot"
+            style="background: #f59e0b; box-shadow: 0 0 5px #f59e0b88"
+          ></div>
+          Busy Courier
+        </div>
+        <div class="legend-item">
+          <div
+            class="legend-dot"
+            style="background: #e05a5a; box-shadow: 0 0 5px #e05a5a88"
+          ></div>
+          Restaurant
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #6c63ff"></div>
+          Assignment
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      let courierList = [];
+      let assignments = [];
+
+      const canvas = document.getElementById("mapCanvas");
+      const ctx = canvas.getContext("2d");
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+      }
+      window.addEventListener("resize", resize);
+      setTimeout(resize, 50);
+
+      function toCanvas(x, y) {
+        const pad = 44;
+        return [
+          pad + (x / 100) * (canvas.width - pad * 2),
+          pad + ((100 - y) / 100) * (canvas.height - pad * 2),
+        ];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const gx = 44 + t * (canvas.width - 88);
+          const gy = 44 + t * (canvas.height - 88);
+          ctx.strokeStyle = i % 5 === 0 ? "#252840" : "#1a1d2e";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(gx, 44);
+          ctx.lineTo(gx, canvas.height - 44);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(44, gy);
+          ctx.lineTo(canvas.width - 44, gy);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "#3d4466";
+        ctx.font = "10px system-ui";
+        ctx.textAlign = "center";
+        for (let i = 0; i <= 10; i++) {
+          const val = i * 10;
+          const gx = 44 + (i / 10) * (canvas.width - 88);
+          const gy = 44 + ((100 - val) / 100) * (canvas.height - 88);
+          ctx.fillText(val, gx, canvas.height - 26);
+          ctx.textAlign = "right";
+          ctx.fillText(val, 36, gy + 4);
+          ctx.textAlign = "center";
+        }
+
+        for (const a of assignments) {
+          const courier = courierList.find((c) => c.id === a.courierId);
+          if (!courier) continue;
+          const [cx, cy] = toCanvas(courier.x, courier.y);
+          const [ox, oy] = toCanvas(a.orderX, a.orderY);
+          ctx.save();
+          ctx.setLineDash([5, 5]);
+          ctx.strokeStyle = "#6c63ff66";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(ox, oy);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        for (const a of assignments) {
+          const [ox, oy] = toCanvas(a.orderX, a.orderY);
+          ctx.save();
+          ctx.fillStyle = "#e05a5a";
+          ctx.shadowColor = "#e05a5a";
+          ctx.shadowBlur = 18;
+          ctx.beginPath();
+          ctx.arc(ox, oy, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "9px system-ui";
+          ctx.textAlign = "center";
+          ctx.fillText(`#${a.orderId}`, ox, oy + 20);
+        }
+
+        for (const c of courierList) {
+          const [px, py] = toCanvas(c.x, c.y);
+          const color = c.status === "Free" ? "#22c55e" : "#f59e0b";
+          ctx.save();
+          ctx.fillStyle = color;
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 18;
+          ctx.beginPath();
+          ctx.arc(px, py, 11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          ctx.fillStyle = "#0f1117";
+          ctx.font = "bold 10px system-ui";
+          ctx.textAlign = "center";
+          ctx.fillText(c.id, px, py + 4);
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "10px system-ui";
+          ctx.fillText(`(${c.x},${c.y})`, px, py - 17);
+        }
+      }
+
+      function refreshCourierList() {
+        const el = document.getElementById("courierList");
+        if (!courierList.length) {
+          el.innerHTML =
+            '<div style="font-size:12px;color:#3d4466;">No couriers yet.</div>';
+          return;
+        }
+        el.innerHTML = courierList
+          .map(
+            (c) => `
+          <div class="courier-item">
+            <div class="courier-dot ${c.status === "Free" ? "dot-free" : "dot-busy"}"></div>
+            <div class="courier-info">
+              <div class="courier-name">Courier #${c.id}</div>
+              <div class="courier-coords">(${c.x}, ${c.y})</div>
+            </div>
+            <span class="badge ${c.status === "Free" ? "badge-free" : "badge-busy"}">${c.status}</span>
+          </div>`,
+          )
+          .join("");
+      }
+
+      function log(tag, cls, msg) {
+        const el = document.getElementById("logEntries");
+        const e = document.createElement("div");
+        e.className = "log-entry";
+        e.innerHTML = `<span class="tag ${cls}">[${tag}]</span> ${msg} <span style="color:#3d4466;float:right">${new Date().toLocaleTimeString()}</span>`;
+        el.prepend(e);
+      }
+
+      async function addCourier() {
+        const id = Number(document.getElementById("courierId").value);
+        const x = Number(document.getElementById("courierX").value);
+        const y = Number(document.getElementById("courierY").value);
+        if (!id) return;
+        try {
+          const res = await fetch("/couriers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, x, y }),
+          });
+          const data = await res.json();
+          courierList = data.couriers.map((c) => ({ ...c }));
+          refreshCourierList();
+          draw();
+          log("COURIER", "tag-ok", `#${id} added at (${x}, ${y})`);
+          ["courierId", "courierX", "courierY"].forEach(
+            (i) => (document.getElementById(i).value = ""),
+          );
+        } catch (e) {
+          log("ERROR", "tag-err", e.message);
+        }
+      }
+
+      async function createOrder() {
+        const id = Number(document.getElementById("orderId").value);
+        const x = Number(document.getElementById("restX").value);
+        const y = Number(document.getElementById("restY").value);
+        if (!id) return;
+        try {
+          const res = await fetch("/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, restaurant: { x, y } }),
+          });
+          const data = await res.json();
+          if (data.status === "Assigned") {
+            const c = courierList.find((c) => c.id === data.courierId);
+            if (c) c.status = "Busy";
+            assignments.push({
+              courierId: data.courierId,
+              orderX: x,
+              orderY: y,
+              orderId: id,
+            });
+            refreshCourierList();
+            draw();
+            log(
+              "ORDER",
+              "tag-ok",
+              `#${id} → Courier #${data.courierId} (dist: ${data.distance})`,
+            );
+          } else {
+            log("ORDER", "tag-err", data.status);
+          }
+          ["orderId", "restX", "restY"].forEach(
+            (i) => (document.getElementById(i).value = ""),
+          );
+        } catch (e) {
+          log("ERROR", "tag-err", e.message);
+        }
+      }
+    </script>
+  </body>
+</html>
