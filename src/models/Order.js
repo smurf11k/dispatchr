@@ -1,9 +1,10 @@
 export default class Order {
-  constructor(id, pickup, dropoff) {
+  constructor(id, pickup, dropoff, weight = 1) {
     this.id = id;
-    this.pickup = pickup; // { x, y }
-    this.dropoff = dropoff; // { x, y }
-    this.status = "pending"; // pending | assigned | completed
+    this.pickup = pickup;
+    this.dropoff = dropoff;
+    this.weight = weight;
+    this.status = "pending";
     this.assignedCourierId = null;
   }
 

@@ -31,6 +31,11 @@
             max="100"
           />
         </div>
+        <select id="courierVehicle">
+          <option value="walker">🚶 Walker (≤5кг)</option>
+          <option value="bicycle">🚲 Bicycle (≤15кг)</option>
+          <option value="car">🚗 Car (≤50кг)</option>
+        </select>
         <button onclick="addCourier()">+ Add Courier</button>
       </div>
 
@@ -40,6 +45,14 @@
           <input id="orderId" placeholder="Order ID" type="number" />
           <input id="restX" placeholder="X" type="number" min="0" max="100" />
           <input id="restY" placeholder="Y" type="number" min="0" max="100" />
+          <input
+            id="orderWeight"
+            placeholder="Вага (кг)"
+            type="number"
+            min="0.1"
+            max="50"
+            step="0.1"
+          />
         </div>
         <button class="btn-order" onclick="createOrder()">
           ⚡ Dispatch Order

@@ -135,22 +135,25 @@ function log(tag, cls, msg) {
   el.prepend(e);
 }
 
+// --- addCourier ---
 async function addCourier() {
   const id = Number(document.getElementById("courierId").value);
   const x = Number(document.getElementById("courierX").value);
   const y = Number(document.getElementById("courierY").value);
+  const vehicle = document.getElementById("courierVehicle").value;
   if (!id) return;
+
   try {
     const res = await fetch("/couriers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, x, y }),
+      body: JSON.stringify({ id, x, y, vehicle }),
     });
     const data = await res.json();
     courierList = data.couriers.map((c) => ({ ...c }));
     refreshCourierList();
     draw();
-    log("COURIER", "tag-ok", `#${id} added at (${x}, ${y})`);
+    log("COURIER", "tag-ok", `#${id} (${vehicle}) додано на (${x}, ${y})`);
     ["courierId", "courierX", "courierY"].forEach(
       (i) => (document.getElementById(i).value = ""),
     );
@@ -159,16 +162,19 @@ async function addCourier() {
   }
 }
 
+// --- createOrder ---
 async function createOrder() {
   const id = Number(document.getElementById("orderId").value);
   const x = Number(document.getElementById("restX").value);
   const y = Number(document.getElementById("restY").value);
+  const weight = Number(document.getElementById("orderWeight").value);
   if (!id) return;
+
   try {
     const res = await fetch("/order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, restaurant: { x, y } }),
+      body: JSON.stringify({ id, restaurant: { x, y }, weight }),
     });
     const data = await res.json();
     if (data.status === "Assigned") {
@@ -185,12 +191,16 @@ async function createOrder() {
       log(
         "ORDER",
         "tag-ok",
-        `#${id} → Courier #${data.courierId} (dist: ${data.distance})`,
+        `#${id} (${weight}кг) → Кур'єр #${data.courierId} [${data.vehicle}] (dist: ${data.distance})`,
       );
     } else {
-      log("ORDER", "tag-err", data.status);
+      log(
+        "ORDER",
+        "tag-err",
+        `${data.status} — можливо, вага ${weight}кг занадто велика`,
+      );
     }
-    ["orderId", "restX", "restY"].forEach(
+    ["orderId", "restX", "restY", "orderWeight"].forEach(
       (i) => (document.getElementById(i).value = ""),
     );
   } catch (e) {

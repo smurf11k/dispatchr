@@ -1,35 +1,38 @@
 import { manhattanDistance } from "../utils/distance.js";
 
 export function assignCourier(couriers, order) {
-  const freeCouriers = couriers.filter((c) => c.status === "Free");
+  const eligible = couriers.filter(
+    (c) => c.status === "Free" && c.maxWeight >= order.weight,
+  );
 
-  if (freeCouriers.length === 0) {
+  if (eligible.length === 0) {
     return { status: "No couriers available" };
   }
 
-  let closestCourier = null;
-  let minDistance = Infinity;
+  let closest = null;
+  let minDist = Infinity;
 
-  for (const courier of freeCouriers) {
-    const distance = manhattanDistance(
+  for (const courier of eligible) {
+    const d = manhattanDistance(
       courier.x,
       courier.y,
       order.restaurant.x,
       order.restaurant.y,
     );
 
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestCourier = courier;
+    if (d < minDist) {
+      minDist = d;
+      closest = courier;
     }
   }
 
-  closestCourier.status = "Busy";
+  closest.status = "Busy";
 
   return {
     status: "Assigned",
     orderId: order.id,
-    courierId: closestCourier.id,
-    distance: minDistance,
+    courierId: closest.id,
+    vehicle: closest.vehicle,
+    distance: minDist,
   };
 }
