@@ -4,6 +4,7 @@ export default class DispatchSystem {
   constructor() {
     this.couriers = [];
     this.orders = [];
+    this.queue = [];
   }
 
   addCourier(courier) {
@@ -12,41 +13,53 @@ export default class DispatchSystem {
 
   createOrder(order) {
     this.orders.push(order);
-    this.assignOrder(order);
+    const assigned = this.assignOrder(order);
+    if (!assigned) this.queue.push(order);
+    return assigned;
   }
 
   assignOrder(order) {
-    const availableCouriers = this.couriers.filter(
-      (courier) => courier.status === "idle",
+    const eligible = this.couriers.filter(
+      (c) => c.status === "idle" && c.maxWeight >= (order.weight ?? 0),
     );
 
-    if (availableCouriers.length === 0) {
-      return null;
-    }
+    if (eligible.length === 0) return null;
 
-    let closestCourier = null;
-    let minDistance = Infinity;
+    let best = null;
+    let bestDist = Infinity;
 
-    for (const courier of availableCouriers) {
-      const distance = manhattanDistance(
+    for (const courier of eligible) {
+      const d = manhattanDistance(
         courier.x,
         courier.y,
         order.pickup.x,
         order.pickup.y,
       );
 
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestCourier = courier;
+      if (best === null) {
+        best = courier;
+        bestDist = d;
+        continue;
+      }
+
+      const diff = Math.abs(d - bestDist);
+      if (diff < 1) {
+        if (courier.completedOrdersToday < best.completedOrdersToday) {
+          best = courier;
+          bestDist = d;
+        }
+      } else if (d < bestDist) {
+        best = courier;
+        bestDist = d;
       }
     }
 
-    if (closestCourier) {
-      closestCourier.assignOrder(order.id);
-      order.assignCourier(closestCourier.id);
+    if (best) {
+      best.assignOrder(order.id);
+      order.assignCourier(best.id);
     }
 
-    return closestCourier;
+    return best;
   }
 
   completeOrder(orderId) {
@@ -54,11 +67,13 @@ export default class DispatchSystem {
     if (!order) return;
 
     const courier = this.couriers.find((c) => c.id === order.assignedCourierId);
-
-    if (courier) {
-      courier.completeOrder();
-    }
+    if (courier) courier.completeOrder();
 
     order.complete();
+
+    if (this.queue.length > 0) {
+      const next = this.queue.shift();
+      this.assignOrder(next);
+    }
   }
 }

@@ -54,6 +54,18 @@ body {
   gap: 6px;
   margin-bottom: 8px;
 }
+
+.input-row select {
+  width: auto;
+  flex: 1;
+  margin-bottom: 0;
+}
+
+#orderWeight {
+  flex: 0 0 96px;
+  min-width: 96px;
+}
+
 input {
   flex: 1;
   background: #0f1117;

@@ -1,5 +1,7 @@
 let courierList = [];
 let assignments = [];
+let restaurants = [];
+let queuedOrders = [];
 
 const canvas = document.getElementById("mapCanvas");
 const ctx = canvas.getContext("2d");
@@ -68,20 +70,20 @@ function draw() {
     ctx.restore();
   }
 
-  for (const a of assignments) {
-    const [ox, oy] = toCanvas(a.orderX, a.orderY);
+  for (const r of restaurants) {
+    const [rx, ry] = toCanvas(r.x, r.y);
     ctx.save();
     ctx.fillStyle = "#e05a5a";
     ctx.shadowColor = "#e05a5a";
     ctx.shadowBlur = 18;
     ctx.beginPath();
-    ctx.arc(ox, oy, 7, 0, Math.PI * 2);
+    ctx.arc(rx, ry, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     ctx.fillStyle = "#94a3b8";
     ctx.font = "9px system-ui";
     ctx.textAlign = "center";
-    ctx.fillText(`#${a.orderId}`, ox, oy + 20);
+    ctx.fillText(`R${r.id}`, rx, ry + 20);
   }
 
   for (const c of courierList) {
@@ -103,6 +105,59 @@ function draw() {
     ctx.font = "10px system-ui";
     ctx.fillText(`(${c.x},${c.y})`, px, py - 17);
   }
+}
+
+function refreshQueueList() {
+  const el = document.getElementById("queueList");
+  if (!queuedOrders.length) {
+    el.innerHTML =
+      '<div style="font-size:12px;color:#3d4466;">Queue is empty.</div>';
+    return;
+  }
+
+  el.innerHTML = queuedOrders
+    .map(
+      (o, idx) => `
+          <div class="courier-item">
+            <div class="courier-dot dot-busy"></div>
+            <div class="courier-info">
+              <div class="courier-name">Order #${o.id}</div>
+              <div class="courier-coords">Queue #${idx + 1} • ${o.weight}kg • (${o.restaurant.x}, ${o.restaurant.y})</div>
+            </div>
+            <span class="badge badge-busy">Queued</span>
+          </div>`,
+    )
+    .join("");
+}
+
+function refreshRestaurantSelect() {
+  const select = document.getElementById("orderRestaurant");
+
+  if (!restaurants.length) {
+    select.innerHTML = "<option value=''>No restaurants</option>";
+    return;
+  }
+
+  select.innerHTML = restaurants
+    .map((r) => `<option value="${r.id}">${r.name} (${r.x}, ${r.y})</option>`)
+    .join("");
+}
+
+function applyState(state) {
+  courierList = (state.couriers ?? []).map((c) => ({ ...c }));
+  restaurants = (state.restaurants ?? []).map((r) => ({ ...r }));
+  queuedOrders = (state.queue ?? []).map((o) => ({ ...o }));
+  assignments = (state.assignments ?? []).map((a) => ({
+    courierId: a.courierId,
+    orderX: a.restaurant.x,
+    orderY: a.restaurant.y,
+    orderId: a.orderId,
+  }));
+
+  refreshCourierList();
+  refreshQueueList();
+  refreshRestaurantSelect();
+  draw();
 }
 
 function refreshCourierList() {
@@ -135,26 +190,31 @@ function log(tag, cls, msg) {
   el.prepend(e);
 }
 
-// --- addCourier ---
 async function addCourier() {
-  const id = Number(document.getElementById("courierId").value);
   const x = Number(document.getElementById("courierX").value);
   const y = Number(document.getElementById("courierY").value);
   const vehicle = document.getElementById("courierVehicle").value;
-  if (!id) return;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
   try {
     const res = await fetch("/couriers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, x, y, vehicle }),
+      body: JSON.stringify({ x, y, vehicle }),
     });
     const data = await res.json();
-    courierList = data.couriers.map((c) => ({ ...c }));
-    refreshCourierList();
-    draw();
-    log("COURIER", "tag-ok", `#${id} (${vehicle}) додано на (${x}, ${y})`);
-    ["courierId", "courierX", "courierY"].forEach(
+    if (!res.ok) {
+      log("ERROR", "tag-err", data.error ?? "Failed to add courier");
+      return;
+    }
+
+    await loadInitialState();
+    log(
+      "COURIER",
+      "tag-ok",
+      `#${data.courier.id} (${vehicle}) додано на (${x}, ${y})`,
+    );
+    ["courierX", "courierY"].forEach(
       (i) => (document.getElementById(i).value = ""),
     );
   } catch (e) {
@@ -162,47 +222,39 @@ async function addCourier() {
   }
 }
 
-// --- createOrder ---
 async function createOrder() {
-  const id = Number(document.getElementById("orderId").value);
-  const x = Number(document.getElementById("restX").value);
-  const y = Number(document.getElementById("restY").value);
+  const restaurantId = Number(document.getElementById("orderRestaurant").value);
   const weight = Number(document.getElementById("orderWeight").value);
-  if (!id) return;
+  if (!Number.isFinite(weight) || weight <= 0) return;
 
   try {
     const res = await fetch("/order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, restaurant: { x, y }, weight }),
+      body: JSON.stringify({ restaurantId, weight }),
     });
     const data = await res.json();
+    if (!res.ok) {
+      log("ERROR", "tag-err", data.error ?? "Failed to create order");
+      return;
+    }
+
     if (data.status === "Assigned") {
-      const c = courierList.find((c) => c.id === data.courierId);
-      if (c) c.status = "Busy";
-      assignments.push({
-        courierId: data.courierId,
-        orderX: x,
-        orderY: y,
-        orderId: id,
-      });
-      refreshCourierList();
-      draw();
+      await loadInitialState();
       log(
         "ORDER",
         "tag-ok",
-        `#${id} (${weight}кг) → Кур'єр #${data.courierId} [${data.vehicle}] (dist: ${data.distance})`,
+        `#${data.orderId} (${weight}кг) → Кур'єр #${data.courierId} [${data.vehicle}] (dist: ${data.distance}, ETA: ${Math.round((data.etaMs ?? 0) / 1000)}s)`,
       );
     } else {
+      await loadInitialState();
       log(
         "ORDER",
         "tag-err",
-        `${data.status} — можливо, вага ${weight}кг занадто велика`,
+        `Order #${data.orderId} queued at position ${data.position}`,
       );
     }
-    ["orderId", "restX", "restY", "orderWeight"].forEach(
-      (i) => (document.getElementById(i).value = ""),
-    );
+    ["orderWeight"].forEach((i) => (document.getElementById(i).value = ""));
   } catch (e) {
     log("ERROR", "tag-err", e.message);
   }
@@ -210,14 +262,13 @@ async function createOrder() {
 
 async function loadInitialState() {
   try {
-    const res = await fetch("/couriers");
+    const res = await fetch("/state");
     const data = await res.json();
-    courierList = data.couriers.map((c) => ({ ...c }));
-    refreshCourierList();
-    draw();
+    applyState(data);
   } catch (e) {
     log("ERROR", "tag-err", e.message);
   }
 }
 
 loadInitialState();
+setInterval(loadInitialState, 1500);

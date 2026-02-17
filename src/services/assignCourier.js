@@ -6,11 +6,11 @@ export function assignCourier(couriers, order) {
   );
 
   if (eligible.length === 0) {
-    return { status: "No couriers available" };
+    return { status: "Queued" };
   }
 
-  let closest = null;
-  let minDist = Infinity;
+  let best = null;
+  let bestDist = Infinity;
 
   for (const courier of eligible) {
     const d = manhattanDistance(
@@ -20,19 +20,32 @@ export function assignCourier(couriers, order) {
       order.restaurant.y,
     );
 
-    if (d < minDist) {
-      minDist = d;
-      closest = courier;
+    if (best === null) {
+      best = courier;
+      bestDist = d;
+      continue;
+    }
+
+    const diff = Math.abs(d - bestDist);
+
+    if (diff <= 1) {
+      if (courier.completedOrdersToday < best.completedOrdersToday) {
+        best = courier;
+        bestDist = d;
+      }
+    } else if (d < bestDist) {
+      best = courier;
+      bestDist = d;
     }
   }
 
-  closest.status = "Busy";
+  best.status = "Busy";
 
   return {
     status: "Assigned",
     orderId: order.id,
-    courierId: closest.id,
-    vehicle: closest.vehicle,
-    distance: minDist,
+    courierId: best.id,
+    vehicle: best.vehicle,
+    distance: bestDist,
   };
 }

@@ -15,7 +15,6 @@
       <div class="section">
         <h2>Add Courier</h2>
         <div class="input-row">
-          <input id="courierId" placeholder="ID" type="number" />
           <input
             id="courierX"
             placeholder="X"
@@ -42,9 +41,7 @@
       <div class="section">
         <h2>Create Order</h2>
         <div class="input-row">
-          <input id="orderId" placeholder="Order ID" type="number" />
-          <input id="restX" placeholder="X" type="number" min="0" max="100" />
-          <input id="restY" placeholder="Y" type="number" min="0" max="100" />
+          <select id="orderRestaurant"></select>
           <input
             id="orderWeight"
             placeholder="Вага (кг)"
@@ -63,6 +60,13 @@
         <h2>Couriers</h2>
         <div class="courier-list" id="courierList">
           <div style="font-size: 12px; color: #3d4466">No couriers yet.</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Queue</h2>
+        <div class="courier-list" id="queueList">
+          <div style="font-size: 12px; color: #3d4466">Queue is empty.</div>
         </div>
       </div>
 

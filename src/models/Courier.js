@@ -3,10 +3,11 @@ export default class Courier {
     this.id = id;
     this.x = x;
     this.y = y;
-    this.vehicle = vehicle; // walker | bicycle | car
-    this.maxWeight = { walker: 5, bicycle: 15, car: 50 }[vehicle];
+    this.vehicle = vehicle;
+    this.maxWeight = { walker: 5, bicycle: 15, car: 50 }[vehicle] ?? 5;
     this.status = "idle";
     this.currentOrderId = null;
+    this.completedOrdersToday = 0;
   }
 
   assignOrder(orderId) {
@@ -17,6 +18,7 @@ export default class Courier {
   completeOrder() {
     this.status = "idle";
     this.currentOrderId = null;
+    this.completedOrdersToday++;
   }
 
   updateLocation(x, y) {
