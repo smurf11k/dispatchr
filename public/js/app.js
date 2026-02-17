@@ -207,3 +207,17 @@ async function createOrder() {
     log("ERROR", "tag-err", e.message);
   }
 }
+
+async function loadInitialState() {
+  try {
+    const res = await fetch("/couriers");
+    const data = await res.json();
+    courierList = data.couriers.map((c) => ({ ...c }));
+    refreshCourierList();
+    draw();
+  } catch (e) {
+    log("ERROR", "tag-err", e.message);
+  }
+}
+
+loadInitialState();
