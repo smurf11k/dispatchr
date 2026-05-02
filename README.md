@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 # Dispatchr
 
 ## Stage 0 — Core Dispatch Engine
