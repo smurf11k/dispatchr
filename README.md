@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Changelog](https://img.shields.io/badge/changelog-updates-blue)](./CHANGELOG.md)
+[![Changelog (UA)](https://img.shields.io/badge/changelog-UA-blue)](./CHANGELOG.md)
 
 # Dispatchr
 
