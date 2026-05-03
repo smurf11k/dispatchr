@@ -1,261 +1,87 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Changelog](https://img.shields.io/badge/changelog-updates-blue)](./CHANGELOG.md)
 
 # Dispatchr
 
-## Stage 0 — Core Dispatch Engine
-
-### ✅ Що зроблено
-
-- Реалізовано координатну сітку міста (0–100 по X та Y)
-- Створено модель `Courier`
-  - id
-  - координати (x, y)
-  - статус: `idle | delivering`
-  - активне замовлення
-- Створено модель `Order`
-  - id
-  - pickup координати
-  - dropoff координати
-  - статус: `pending | assigned | completed`
-- Реалізовано `DispatchSystem`
-  - зберігання даних в памʼяті
-  - автоматичне призначення замовлення
-- Алгоритм розподілу:
-  - використовується Manhattan distance
-  - замовлення призначається найближчому вільному курʼєру
-
-Формула відстані:
-
-|x1 - x2| + |y1 - y2|
+A delivery dispatch simulation system that assigns orders to couriers based on proximity, capacity, and fairness rules, featuring queue management, time-based execution, and a simple web UI.
 
 ---
 
-### ▶ Мінімальна перевірка
+# Overview
 
-1. Додати курʼєрів:
+Dispatchr is a simulation of a last-mile delivery system, modeling how orders are assigned to couriers in a dynamic environment.
 
-```js
-system.addCourier(new Courier(1, 10, 10));
-system.addCourier(new Courier(2, 50, 50));
-```
-
-2. Створити замовлення:
-
-```js
-const order = new Order(101, { x: 12, y: 9 }, { x: 80, y: 80 });
-system.createOrder(order);
-```
-
-3. Запуск:
-
-```
-node src/index.js
-```
-
-### ✔ Очікуваний результат
-
-- Замовлення отримує статус `assigned`
-- Найближчий курʼєр змінює статус на `delivering`
-- Вивід у консолі показує оновлений стан системи
-
-```
-DispatchSystem {
-  couriers: [
-    Courier {
-      id: 1,
-      x: 10,
-      y: 10,
-      status: 'delivering',
-      currentOrderId: 101
-    },
-    Courier {
-      id: 2,
-      x: 50,
-      y: 50,
-      status: 'idle',
-      currentOrderId: null
-    }
-  ],
-  orders: [
-    Order {
-      id: 101,
-      pickup: [Object],
-      dropoff: [Object],
-      status: 'assigned',
-      assignedCourierId: 1
-    }
-  ]
-}
-```
+The project evolves from a core dispatch algorithm into a more realistic system with constraints, fairness logic, and time-based behavior.
 
 ---
 
-Stage 0 завершено. Логіка ядра працює.
+# Features
+- Distance-based assignment using Manhattan distance
+- Capacity constraints based on courier vehicle type
+- Queue system for unassigned orders
+- Fairness logic (load balancing between couriers)
+- Time-based simulation of deliveries
+- Unit tests with Jest
+- Basic web UI for interacting with the system
 
 ---
 
-## Stage 1 — Basic MVP
+# Core Concepts
 
-### 🎯 Мета
+## Courier
 
-Реалізувати мінімальний робочий механізм призначення замовлення найближчому вільному курʼєру з unit-тестами.
+- Position (x, y)
+- Status: idle / busy
+- Vehicle type (walker, bicycle, car)
+- Capacity (max weight)
+- Completed orders tracking
 
----
+## Order
 
-### ✅ Вхідні дані
+- Pickup & dropoff coordinates
+- Weight
+- Status: pending / assigned / completed / queued
 
-**Список курʼєрів:**
+## Dispatch Logic
 
-- id
-- статус (`Free` / `Busy`)
-- координати (x, y)
-
-**Нове замовлення:**
-
-- id
-- координати ресторану (x, y)
-
----
-
-### ⚙ Реалізована логіка
-
-1. Фільтрація курʼєрів зі статусом `Free`
-2. Обчислення Manhattan distance до ресторану
-3. Пошук найближчого курʼєра
-4. Зміна статусу курʼєра на `Busy`
-5. Повернення результату у форматі JSON
-
-Якщо вільних курʼєрів немає — повертається:
-
-```
-
-{ "status": "No couriers available" }
-
-```
+- Filters available couriers
+- Calculates Manhattan distance
+- Applies capacity constraints
+- Uses fairness rules when distances are similar
+- Falls back to queue when assignment is not possible
 
 ---
 
-### 📦 Повертаємий результат (успішне призначення)
-
-```json
-{
-  "status": "Assigned",
-  "orderId": 101,
-  "courierId": 1,
-  "distance": 3
-}
-```
+## Simulation Behavior
+- Orders are assigned to the closest valid courier
+- If no courier is available → order is queued
+- When a courier becomes free → queue is reprocessed
+- Deliveries complete automatically via time-based simulation
 
 ---
 
-### 🧪 Unit Tests
-
-Додано тестування через Jest.
-
-Перевіряються сценарії:
-
-- ✔ Призначення найближчого курʼєра
-- ✔ Відсутність вільних курʼєрів
-
-Запуск тестів:
-
-```
-npm test
-```
+## Tech Stack
+- Node.js
+- JavaScript
+- Jest (testing)
+- Basic HTML/CSS/JS (UI)
 
 ---
 
-Stage 1 завершено.
-MVP логіка із тестами реалізована.
+# Getting Started
 
----
-
-## Stage 2 — Extended Dispatch + UI
-
-### 🎯 Мета
-
-Розширити MVP до більш реалістичного сценарію: додати обмеження по вазі, тип транспорту курʼєра та базовий веб-інтерфейс для ручного керування системою.
-
----
-
-### ✅ Що було додано
-
-- Оновлено алгоритм `assignCourier`:
-  - враховується `maxWeight` курʼєра
-  - для замовлень, які неможливо призначити, повертається статус `Queued`
-- Додано класи транспорту курʼєрів:
-  - `walker` (до 5 кг)
-  - `bicycle` (до 15 кг)
-  - `car` (до 50 кг)
-- Розширено модель курʼєра полями `vehicle`, `maxWeight`, `completedOrdersToday`.
-- Додано базовий UI (`public/index.html`, `public/js/app.js`, `public/css/style.css`):
-  - створення курʼєрів
-  - створення замовлень
-  - відображення стану курʼєрів і логів
-- Додано ініціалізацію стартового набору даних (init), щоб система запускалась уже з тестовими сутностями.
-
----
-
-### 🧪 Тестування Stage 2
-
-Розширено unit-тести для сценаріїв:
-
-- ✔ призначення курʼєра з відповідною вантажопідйомністю
-- ✔ повернення `Queued`, якщо вага перевищує ліміти доступних курʼєрів
-- ✔ базовий сценарій призначення найближчого курʼєра
-
-Запуск:
-
-```
-npm test
-```
-
----
-
-Stage 2 завершено.
-Система перейшла від «тільки ядра» до MVP із UI та обмеженнями доменної логіки.
-
----
-
-## Stage 3 — Queue, Fairness, Simulation
-
-### 🎯 Мета
-
-Зробити поведінку dispatch-системи ближчою до реального процесу доставки: додати чесніший вибір курʼєра, чергу замовлень та симуляцію виконання у часі.
-
----
-
-### ✅ Що реалізовано
-
-- Додано логіку справедливого вибору курʼєра:
-  - якщо відстані близькі (різниця до 1), пріоритет має курʼєр з меншим `completedOrdersToday`
-  - якщо різниця відстані більша — пріоритет за ближчим курʼєром
-- Реалізовано робочу чергу замовлень:
-  - замовлення, які неможливо обробити одразу, стають у `queue`
-  - після звільнення курʼєра черга автоматично переобробляється
-- Додано симуляцію виконання призначення у часі (автозавершення через таймер), щоб статуси `Busy/Free` та рух черги були видимими у UI.
-- На старті системи додаються:
-  - початкові ресторани
-  - стартові замовлення (частина з них одразу в роботі, частина — у черзі)
-- Оновлено UI:
-  - автоматична генерація ID для курʼєрів і замовлень (ручні поля ID прибрані)
-  - відображення ресторанів, активних призначень і стану черги
-  - покращена панель активності (логів) та адаптована верстка бокової панелі
-
----
-
-### 📌 Підсумок Stage 3
-
-На цьому етапі Dispatchr став не просто алгоритмом призначення, а повноцінною міні-симуляцією міської доставки з видимою чергою, часовою динамікою та більш реалістичним балансуванням навантаження між курʼєрами.
-
-Запуск:
-
-```
+```bash
+npm install
 npm start
 ```
 
-Тести:
+Run tests:
 
-```
+```bash
 npm test
 ```
+
+## Notes
+
+- The project started as a hackathon-style prototype and evolved into a more complete simulation.
+- Focus is on dispatch logic and system behavior rather than production-ready infrastructure.
